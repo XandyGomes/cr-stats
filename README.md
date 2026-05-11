@@ -1,13 +1,13 @@
 # ⚔️ CR Stats — Clash Royale Intelligence
 
-[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Vercel-black?style=for-the-badge)](https://cr-stats-9pgf4lcjv-alexandre-gomes-projects-9bfd3675.vercel.app)
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Vercel-black?style=for-the-badge)](https://cr-stats-olive.vercel.app)
 [![GitHub](https://img.shields.io/badge/GitHub-XandyGomes%2Fcr--stats-181717?style=for-the-badge&logo=github)](https://github.com/XandyGomes/cr-stats)
 [![MIT License](https://img.shields.io/badge/License-MIT-7c5cfc?style=for-the-badge)](LICENSE)
 
 > Dashboard mobile-first para análise de batalhas, decks e progresso no Clash Royale.  
 > Tudo funciona **100% no seu dispositivo** — nenhum dado vai para servidores externos.
 
-🌐 **App online:** [cr-stats-9pgf4lcjv-alexandre-gomes-projects-9bfd3675.vercel.app](https://cr-stats-9pgf4lcjv-alexandre-gomes-projects-9bfd3675.vercel.app)
+🌐 **App online:** [cr-stats-9pgf4lcjv-alexandre-gomes-projects-9bfd3675.vercel.app](https://cr-stats-olive.vercel.app)
 
 ---
 
