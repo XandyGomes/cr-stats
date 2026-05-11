@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#070711" />
+  <meta name="description" content="Clash Royale Stats — Analise batalhas, decks e progresso." />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CR Stats" />
+  <title>CR Stats — Clash Royale Intelligence</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     SPLASH / LOGIN SCREEN
+══════════════════════════════════════════ -->
+<div id="splash-screen" class="screen active">
+  <div class="splash-bg"></div>
+  <div class="splash-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="splash-content">
+    <div class="logo-container">
+      <div class="logo-icon">⚔️</div>
+      <h1 class="logo-title">CR<span class="accent">Stats</span></h1>
+      <p class="logo-sub">Clash Royale Intelligence</p>
+    </div>
+
+    <div class="login-card">
+      <div class="login-tabs">
+        <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Entrar</button>
+        <button class="tab-btn" id="tab-register" onclick="switchTab('register')">Cadastrar</button>
+      </div>
+
+      <!-- LOGIN -->
+      <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="login-username">Usuário</label>
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="login-username" placeholder="Nome de usuário" autocomplete="username" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="login-password">Senha</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="login-password" placeholder="Sua senha" autocomplete="current-password" required />
+            <button type="button" class="toggle-pass" onclick="togglePassword('login-password',this)">👁️</button>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary btn-full" id="login-btn">
+          <span class="btn-text">Entrar</span>
+          <span class="btn-loader hidden">⏳ Entrando...</span>
+        </button>
+        <p class="form-error hidden" id="login-error"></p>
+      </form>
+
+      <!-- REGISTER -->
+      <form id="register-form" class="auth-form hidden" onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label for="reg-username">Usuário</label>
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="reg-username" placeholder="Escolha um nome" autocomplete="username" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="reg-password">Senha (mín. 8 caracteres)</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="reg-password" placeholder="Senha segura" autocomplete="new-password" required minlength="8" />
+            <button type="button" class="toggle-pass" onclick="togglePassword('reg-password',this)">👁️</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="reg-player-tag">Player Tag</label>
+          <div class="input-wrap">
+            <span class="input-icon">🏷️</span>
+            <input type="text" id="reg-player-tag" placeholder="#XXXXXXXX" autocomplete="off" required />
+          </div>
+          <p class="form-hint">Seu # de jogador (ex: #2PP2Y8LY)</p>
+        </div>
+        <div class="form-group">
+          <label for="reg-api-key">API Key Clash Royale</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔑</span>
+            <input type="password" id="reg-api-key" placeholder="Bearer token da API oficial" autocomplete="off" required />
+            <button type="button" class="toggle-pass" onclick="togglePassword('reg-api-key',this)">👁️</button>
+          </div>
+          <p class="form-hint">Obtenha em <a href="https://developer.clashroyale.com" target="_blank" rel="noopener">developer.clashroyale.com</a></p>
+        </div>
+        <button type="submit" class="btn-primary btn-full" id="register-btn">
+          <span class="btn-text">Criar Conta</span>
+          <span class="btn-loader hidden">⏳ Criando...</span>
+        </button>
+        <p class="form-error hidden" id="register-error"></p>
+      </form>
+    </div>
+
+    <p class="security-note">🔐 Tudo armazenado localmente — nenhum dado vai para servidores</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAIN APP SCREEN
+══════════════════════════════════════════ -->
+<div id="app-screen" class="screen hidden">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="player-avatar" id="player-avatar">⚔️</div>
+      <div class="player-info">
+        <span class="player-name" id="player-name-display">Jogador</span>
+        <span class="player-tag"  id="player-tag-display">#TAG</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" id="refresh-btn" onclick="refreshData()" title="Atualizar">🔄</button>
+      <button class="icon-btn" onclick="logout()" title="Sair">🚪</button>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="app-content">
+
+    <!-- ── OVERVIEW ── -->
+    <section class="page active" id="page-overview">
+      <div class="page-header">
+        <h2>Visão Geral</h2>
+        <span class="last-update" id="last-update-text">Carregando...</span>
+      </div>
+
+      <div class="stats-hero">
+        <div class="trophy-display">
+          <div class="trophy-icon">🏆</div>
+          <div class="trophy-value" id="trophy-count">—</div>
+          <div class="trophy-label">Troféus</div>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><span class="hs-icon">👑</span><span class="hs-val" id="best-trophies">—</span><span class="hs-lbl">Recorde</span></div>
+          <div class="hero-stat"><span class="hs-icon">⭐</span><span class="hs-val" id="player-level">—</span><span class="hs-lbl">Nível</span></div>
+          <div class="hero-stat"><span class="hs-icon">🏟️</span><span class="hs-val" id="player-arena">—</span><span class="hs-lbl">Arena</span></div>
+        </div>
+      </div>
+
+      <div class="winrate-section">
+        <div class="wr-card">
+          <canvas id="winrate-chart" width="120" height="120"></canvas>
+          <div class="wr-overlay">
+            <span class="wr-pct" id="wr-pct-val">—%</span>
+            <span class="wr-lbl">Win Rate</span>
+          </div>
+        </div>
+        <div class="battle-summary">
+          <div class="bs-item win"><span class="bs-count" id="total-wins">—</span><span class="bs-label">Vitórias</span></div>
+          <div class="bs-divider"></div>
+          <div class="bs-item loss"><span class="bs-count" id="total-losses">—</span><span class="bs-label">Derrotas</span></div>
+          <div class="bs-divider"></div>
+          <div class="bs-item total"><span class="bs-count" id="total-battles">—</span><span class="bs-label">Total</span></div>
+        </div>
+      </div>
+
+      <div class="insight-banner">
+        <div class="insight-icon">🤖</div>
+        <p class="insight-text" id="insight-text">Analisando seus dados...</p>
+      </div>
+
+      <div class="section-title">
+        <h3>Últimas Batalhas</h3>
+        <button class="see-all-btn" onclick="navigateTo('battles')">Ver todas →</button>
+      </div>
+      <div class="recent-battles" id="recent-battles-mini">
+        <div class="loading-state"><div class="spinner"></div><p>Carregando...</p></div>
+      </div>
+    </section>
+
+    <!-- ── BATALHAS ── -->
+    <section class="page hidden" id="page-battles">
+      <div class="page-header">
+        <h2>Histórico de Batalhas</h2>
+        <div class="filter-row">
+          <button class="filter-chip active" onclick="filterBattles('all',this)">Todas</button>
+          <button class="filter-chip" onclick="filterBattles('win',this)">Vitórias ✅</button>
+          <button class="filter-chip" onclick="filterBattles('loss',this)">Derrotas ❌</button>
+        </div>
+      </div>
+      <div class="battles-list" id="battles-list">
+        <div class="loading-state"><div class="spinner"></div><p>Carregando...</p></div>
+      </div>
+    </section>
+
+    <!-- ── DECKS ── -->
+    <section class="page hidden" id="page-decks">
+      <div class="page-header"><h2>Análise de Decks</h2></div>
+      <div class="recommendation-card">
+        <div class="rec-header">
+          <span class="rec-badge">🤖 IA</span>
+          <h3>Deck Recomendado</h3>
+        </div>
+        <div id="rec-body"><div class="loading-state"><div class="spinner"></div><p>Analisando...</p></div></div>
+      </div>
+      <div class="section-title"><h3>Performance por Deck</h3></div>
+      <div class="deck-stats-list" id="deck-stats-list">
+        <div class="loading-state"><div class="spinner"></div><p>Calculando...</p></div>
+      </div>
+    </section>
+
+    <!-- ── CARTAS ── -->
+    <section class="page hidden" id="page-cards">
+      <div class="page-header">
+        <h2>Minhas Cartas</h2>
+        <div class="filter-row">
+          <button class="filter-chip active" onclick="filterCards('all',this)">Todas</button>
+          <button class="filter-chip" onclick="filterCards('common',this)">Comuns</button>
+          <button class="filter-chip" onclick="filterCards('rare',this)">Raras</button>
+          <button class="filter-chip" onclick="filterCards('epic',this)">Épicas</button>
+          <button class="filter-chip" onclick="filterCards('legendary',this)">Lendárias</button>
+        </div>
+      </div>
+      <div class="cards-grid" id="cards-grid">
+        <div class="loading-state"><div class="spinner"></div><p>Carregando cartas...</p></div>
+      </div>
+    </section>
+
+    <!-- ── ANALYTICS ── -->
+    <section class="page hidden" id="page-analytics">
+      <div class="page-header"><h2>Analytics</h2></div>
+      <div class="chart-card">
+        <h3 class="chart-title">📈 Evolução de Troféus</h3>
+        <div class="chart-wrap"><canvas id="trophy-chart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">🃏 Win Rate por Deck (Top 5)</h3>
+        <div class="chart-wrap"><canvas id="deck-wr-chart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">💎 Cartas Mais Usadas</h3>
+        <div class="chart-wrap"><canvas id="card-usage-chart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">🕐 Batalhas por Hora do Dia</h3>
+        <div class="chart-wrap"><canvas id="time-chart"></canvas></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-overview" onclick="navigateTo('overview')">
+      <span class="nav-icon">🏠</span><span class="nav-label">Início</span>
+    </button>
+    <button class="nav-item" id="nav-battles" onclick="navigateTo('battles')">
+      <span class="nav-icon">⚔️</span><span class="nav-label">Batalhas</span>
+    </button>
+    <button class="nav-item" id="nav-decks" onclick="navigateTo('decks')">
+      <span class="nav-icon">🃏</span><span class="nav-label">Decks</span>
+    </button>
+    <button class="nav-item" id="nav-cards" onclick="navigateTo('cards')">
+      <span class="nav-icon">💎</span><span class="nav-label">Cartas</span>
+    </button>
+    <button class="nav-item" id="nav-analytics" onclick="navigateTo('analytics')">
+      <span class="nav-icon">📊</span><span class="nav-label">Analytics</span>
+    </button>
+  </nav>
+</div>
+
+<!-- TOAST -->
+<div class="toast hidden" id="toast"></div>
+
+<!-- Scripts -->
+<script src="js/crypto.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/api.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
