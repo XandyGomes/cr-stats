@@ -559,3 +559,30 @@ a { color: var(--accent-hi); }
   padding: 2px 7px; margin-left: 6px;
 }
 
+/* ── CARD LEVEL BADGE ────────────────────── */
+.card-emoji-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-lvl-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -6px;
+  font-size: 9px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 5px;
+  border: 1px solid rgba(0,0,0,0.4);
+  min-width: 14px;
+  text-align: center;
+  letter-spacing: 0;
+  pointer-events: none;
+}
+.badge-legendary { background: #f5c842; color: #1a1200; }
+.badge-epic      { background: #b450ff; color: #fff; }
+.badge-rare      { background: #ff9632; color: #fff; }
+.badge-common    { background: #6a6488; color: #fff; }

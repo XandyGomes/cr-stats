@@ -359,15 +359,20 @@ function renderCardsGrid(cards) {
   }
   container.innerHTML = cards.map(c => {
     const rarity = (c.rarity || 'common').toLowerCase();
-    const level = c.level || 1;
+    const level  = c.level || 1;
     const maxLevel = rarity === 'legendary' ? 9 : rarity === 'epic' ? 10 : rarity === 'rare' ? 11 : 12;
     const pct = Math.round((level / maxLevel) * 100);
+    // Cor do badge por raridade
+    const badgeClass = rarity === 'legendary' ? 'badge-legendary'
+                     : rarity === 'epic'      ? 'badge-epic'
+                     : rarity === 'rare'      ? 'badge-rare' : 'badge-common';
     return `
       <div class="card-item ${rarity}">
-        <div class="card-emoji">${getCardEmoji(c.name)}</div>
+        <div class="card-emoji-wrap">
+          <div class="card-emoji">${getCardEmoji(c.name)}</div>
+          <span class="card-lvl-badge ${badgeClass}">${level}</span>
+        </div>
         <div class="card-name">${c.name}</div>
-        <div class="card-level">Nv.${level}/${maxLevel}</div>
-        <div class="card-level-bar"><div class="card-level-fill" style="width:${pct}%"></div></div>
         <div class="card-rarity-dot rarity-${rarity}"></div>
       </div>`;
   }).join('');
