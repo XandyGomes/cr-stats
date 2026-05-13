@@ -76,13 +76,23 @@ async function loadAllData() {
 
   } catch (err) {
     console.error('Data load error:', err);
-    showToast(`❌ ${err.message}`, 5000);
+    const msg = err.message || '';
 
-    // Show error in insight banner
-    document.getElementById('insight-text').textContent =
-      `Erro ao conectar à API: ${err.message}. Verifique sua chave e tag.`;
+    // Mostrar toast com erro
+    showToast(`❌ ${msg.split('\n')[0]}`, 7000);
 
-    // If API key is invalid, render empty states gracefully
+    // Mostrar instrução detalhada no banner de insight
+    if (msg.includes('403') || msg.includes('Acesso negado')) {
+      document.getElementById('insight-text').innerHTML =
+        '⚠️ <strong>Erro de API Key (403)</strong>: Seu IP não está autorizado.<br>' +
+        'Acesse <a href="https://developer.clashroyale.com" target="_blank" style="color:#f5c842">developer.clashroyale.com</a> ' +
+        '→ sua chave → edite → IP: <code>0.0.0.0/0</code> (permite qualquer IP).';
+    } else {
+      document.getElementById('insight-text').textContent =
+        `Erro: ${msg}. Verifique sua chave e tag.`;
+    }
+
+    // Renderizar estados vazios
     renderBattlesPage([]);
     renderDecksPage([], []);
     renderCardsPage([]);
