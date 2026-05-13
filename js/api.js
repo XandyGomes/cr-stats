@@ -1,43 +1,15 @@
 /**
  * api.js — Clash Royale API client
- * Uses CORS proxies with automatic fallback for browser-side requests.
- * Official API: https://api.clashroyale.com/v1
  *
- * ⚠️ IMPORTANT: A chave da API deve ser criada com o IP do proxy, não do seu PC!
- * Solução: crie a chave em developer.clashroyale.com e deixe o IP em branco
- * ou use "0.0.0.0/0" para permitir qualquer IP (modo desenvolvimento).
+ * Usa nossa Vercel Function (/api/cr-proxy) como proxy backend.
+ * Sem CORS. Sem proxies públicos. A chave vai direto do browser pro nosso servidor,
+ * que repassa para a API oficial do Clash Royale.
  */
 
 const CR_BASE = 'https://api.clashroyale.com/v1';
 
-// CORS Proxy list — tentados em ordem até um funcionar
-const PROXY_LIST = [
-  // allorigins — passa headers de autorização via encoded URL
-  (url, key) => ({
-    url: `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    headers: { 'Accept': 'application/json' },
-    note: 'allorigins'
-  }),
-  // corsproxy.io
-  (url, key) => ({
-    url: `https://corsproxy.io/?${encodeURIComponent(url)}`,
-    headers: { 'Authorization': `Bearer ${key}`, 'Accept': 'application/json' },
-    note: 'corsproxy.io'
-  }),
-  // thingproxy
-  (url, key) => ({
-    url: `https://thingproxy.freeboard.io/fetch/${url}`,
-    headers: { 'Authorization': `Bearer ${key}`, 'Accept': 'application/json' },
-    note: 'thingproxy'
-  }),
-];
-
-// allorigins não suporta headers customizados — precisamos embutir a key na URL via proxy diferente
-// Estratégia: usar cors-anywhere público como 4º fallback
-const buildProxiedUrl = (path, apiKey) => {
-  const fullUrl = `${CR_BASE}${path}`;
-  return PROXY_LIST.map(fn => fn(fullUrl, apiKey));
-};
+// URL base do nosso proxy (relativo — funciona em qualquer domínio Vercel)
+const PROXY_BASE = '/api/cr-proxy';
 
 const AppCache = {
   CACHE_KEY: 'crstats_cache',
@@ -48,7 +20,7 @@ const AppCache = {
   set(key, data) {
     try {
       localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
-    } catch(e) { /* storage full */ }
+    } catch(e) { /* storage cheio */ }
   },
   get(key) {
     try {
@@ -68,83 +40,51 @@ const CRApi = {
 
   init(apiKey, playerTag) {
     this.apiKey = apiKey.trim();
-    // Normaliza a tag: remove # inicial e re-encoda
+    // Normaliza: remove # e re-encoda para %23
     const tag = playerTag.trim().toUpperCase().replace(/^#/, '');
-    this.playerTag = '%23' + tag; // %23 = #
+    this.playerTag = '%23' + tag;
   },
 
   /**
-   * Tenta múltiplos proxies até um responder corretamente.
-   * allorigins injeta o Authorization via query param workaround.
+   * Faz a requisição via nosso proxy Vercel.
+   * O token é enviado como query param (HTTPS — seguro em trânsito).
    */
   async _fetch(path) {
-    const fullUrl = `${CR_BASE}${path}`;
-    const proxies = buildProxiedUrl(path, this.apiKey);
+    const proxyUrl = `${PROXY_BASE}?path=${encodeURIComponent(path)}&token=${encodeURIComponent(this.apiKey)}`;
 
-    // Estratégia especial para allorigins: ele não suporta Auth headers.
-    // Usamos ele apenas para endpoints públicos (cards).
-    // Para endpoints privados (player, battlelog), pulamos direto para os outros.
-    const isPublic = path === '/cards';
-    const startIdx = isPublic ? 0 : 1;
+    let res;
+    try {
+      res = await fetch(proxyUrl, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(15000)
+      });
+    } catch (networkErr) {
+      throw new Error('Sem conexão com a internet. Verifique sua rede.');
+    }
 
-    let lastError = null;
+    const data = await res.json().catch(() => ({}));
 
-    for (let i = startIdx; i < proxies.length; i++) {
-      const proxy = proxies[i];
-      try {
-        console.log(`[CRApi] Tentando proxy: ${proxy.note} → ${path}`);
-        const res = await fetch(proxy.url, {
-          method: 'GET',
-          headers: proxy.headers,
-          signal: AbortSignal.timeout(10000) // 10s timeout
-        });
-
-        if (res.status === 403) {
-          const body = await res.text();
-          console.warn(`[CRApi] 403 via ${proxy.note}:`, body);
-          // 403 pode ser IP não autorizado OU key inválida
-          throw new Error('403_forbidden');
-        }
-        if (res.status === 404) throw new Error('404_not_found');
-        if (res.status === 429) throw new Error('429_rate_limit');
-        if (!res.ok) throw new Error(`http_${res.status}`);
-
-        const data = await res.json();
-
-        // allorigins às vezes retorna { contents: "..." } — verificar
-        if (data && data.contents && typeof data.contents === 'string') {
-          try { return JSON.parse(data.contents); } catch { /* not json wrapper */ }
-        }
-
-        return data;
-
-      } catch (err) {
-        lastError = err;
-        const msg = err.message || '';
-
-        // Erros definitivos — não tentar outros proxies
-        if (msg === '403_forbidden' || msg === '404_not_found' || msg === '429_rate_limit') {
-          break;
-        }
-
-        console.warn(`[CRApi] Proxy ${proxy.note} falhou:`, msg);
-        // Tentar próximo proxy
-        continue;
+    if (!res.ok) {
+      if (res.status === 403) {
+        throw new Error(
+          'API Key inválida ou expirada (403). ' +
+          'Verifique em developer.clashroyale.com se a chave ainda está ativa e se o IP está como 0.0.0.0/0.'
+        );
       }
+      if (res.status === 404) {
+        throw new Error(`Jogador não encontrado (404). Verifique seu Player Tag — use exatamente como aparece no jogo (ex: #2P9UUJY92).`);
+      }
+      if (res.status === 429) {
+        throw new Error('Muitas requisições (429). Aguarde alguns segundos e tente novamente.');
+      }
+      if (res.status === 400) {
+        throw new Error('Parâmetro inválido. Verifique sua Player Tag.');
+      }
+      throw new Error(data.message || data.error || `Erro na API (${res.status}).`);
     }
 
-    // Traduzir erro final
-    const msg = lastError?.message || '';
-    if (msg === '403_forbidden') {
-      throw new Error(
-        'Acesso negado (403). Verifique:\n' +
-        '1. Sua API Key está correta?\n' +
-        '2. Acesse developer.clashroyale.com → sua chave → edite o IP permitido → deixe 0.0.0.0/0 ou delete e crie nova sem restrição de IP.'
-      );
-    }
-    if (msg === '404_not_found') throw new Error('Jogador não encontrado. Verifique seu Player Tag (ex: #2PP2Y8LY).');
-    if (msg === '429_rate_limit') throw new Error('Muitas requisições. Aguarde alguns segundos.');
-    throw new Error('Não foi possível conectar à API. Verifique sua internet e tente novamente.');
+    return data;
   },
 
   /** GET /players/{playerTag} */
@@ -183,7 +123,7 @@ const CRApi = {
     return cards;
   },
 
-  /** Force refresh — clear cache then fetch */
+  /** Force refresh — limpa cache e rebusca tudo */
   async refresh() {
     AppCache.clear();
     return Promise.all([

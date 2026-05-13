@@ -3,7 +3,7 @@
  * Caches app shell for offline use
  */
 
-const CACHE = 'crstats-v3';
+const CACHE = 'crstats-v4';
 const SHELL = [
   './',
   './index.html',
@@ -34,9 +34,14 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Network-first for API calls, cache-first for shell
+  // Network-first: chamadas de API (/api/*) e URLs externas
   const url = new URL(e.request.url);
-  if (url.hostname.includes('clashroyale') || url.hostname.includes('corsproxy') || url.hostname.includes('allorigins') || url.hostname.includes('thingproxy')) {
+  const isApiCall = url.pathname.startsWith('/api/') ||
+                    url.hostname.includes('clashroyale') ||
+                    url.hostname.includes('googleapis.com') ||
+                    url.hostname.includes('jsdelivr');
+
+  if (isApiCall) {
     // Always network for API
     e.respondWith(fetch(e.request).catch(() => new Response('{"error":"offline"}', { headers: { 'Content-Type': 'application/json' } })));
   } else {
