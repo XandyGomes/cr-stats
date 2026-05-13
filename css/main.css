@@ -58,11 +58,7 @@ body {
 .screen.active  { opacity: 1; transform: translateY(0); pointer-events: all; }
 .screen.hidden  { opacity: 0; transform: translateY(20px); pointer-events: none; }
 
-#app-screen {
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-}
+#app-screen { overflow: hidden; }
 
 #splash-screen {
   overflow-y: auto;
@@ -181,10 +177,16 @@ body {
 
 /* ── APP CONTENT ─────────────────────────── */
 .app-content {
-  padding-top: calc(var(--top-h) + 12px);
-  padding-bottom: calc(var(--nav-h) + 24px);
-  padding-left: 16px; padding-right: 16px;
-  min-height: 100dvh;
+  position: fixed;
+  top: var(--top-h);
+  left: 0;
+  right: 0;
+  bottom: var(--nav-h);
+  overflow-y: scroll;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding: 12px 16px 24px;
 }
 
 .page { display: none; animation: page-in .3s ease; }
