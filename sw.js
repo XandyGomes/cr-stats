@@ -3,11 +3,11 @@
  * Caches app shell for offline use
  */
 
-const CACHE = 'crstats-v6';
+const CACHE = 'crstats-v7';
 const SHELL = [
   './',
   './index.html',
-  // CSS served network-first (never cached) to always get latest styles
+  './js/cards.js',
   './js/crypto.js',
   './js/auth.js',
   './js/api.js',
@@ -34,26 +34,21 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Network-first: chamadas de API (/api/*) e URLs externas
-  const url = new URL(e.request.url);
-  const isApiCall = url.pathname.startsWith('/api/') ||
-                    url.hostname.includes('clashroyale') ||
-                    url.hostname.includes('googleapis.com') ||
-                    url.hostname.includes('jsdelivr');
-
-  if (isApiCall) {
-    // Always network for API
-    e.respondWith(fetch(e.request).catch(() => new Response('{"error":"offline"}', { headers: { 'Content-Type': 'application/json' } })));
-  } else {
-    // Cache-first for shell
-    e.respondWith(
-      caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
-        if (res.ok) {
+  // Network-First Strategy for everything
+  // Isso garante que o usuário sempre receba a versão mais nova se estiver online.
+  e.respondWith(
+    fetch(e.request)
+      .then(res => {
+        // Se a rede estiver ok, clonamos e guardamos no cache
+        if (res && res.status === 200) {
           const clone = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return res;
-      }))
-    );
-  }
+      })
+      .catch(() => {
+        // Se falhar (offline), tenta buscar no cache
+        return caches.match(e.request);
+      })
+  );
 });
