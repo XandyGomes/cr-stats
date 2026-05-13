@@ -3,11 +3,11 @@
  * Caches app shell for offline use
  */
 
-const CACHE = 'crstats-v5';
+const CACHE = 'crstats-v6';
 const SHELL = [
   './',
   './index.html',
-  './css/main.css',
+  // CSS served network-first (never cached) to always get latest styles
   './js/crypto.js',
   './js/auth.js',
   './js/api.js',
