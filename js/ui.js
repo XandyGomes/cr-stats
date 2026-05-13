@@ -132,16 +132,12 @@ function buildBattleCardHTML(battle, showOpp = false) {
   const type = battle.type || 'Ladder';
   const crowns = `${battle.team?.[0]?.crowns || 0}-${battle.opponent?.[0]?.crowns || 0}`;
 
-  const miniCards = cards.slice(0, 8).map(c =>
-    `<div class="mini-card" title="${c.name}">${getCardEmoji(c.name)}</div>`
-  ).join('');
+  const miniCards = cards.slice(0, 8).map(c => miniCardImgHTML(c)).join('');
 
   const oppMini = showOpp && oppCards.length > 0 ? `
     <div class="opp-row">
       <span class="opp-label">Adversário:</span>
-      <div class="battle-cards-row opp-cards">${oppCards.slice(0, 8).map(c =>
-        `<div class="mini-card opp" title="${c.name}">${getCardEmoji(c.name)}</div>`
-      ).join('')}</div>
+      <div class="battle-cards-row opp-cards">${oppCards.slice(0, 8).map(c => miniCardImgHTML(c, 'opp')).join('')}</div>
     </div>` : '';
 
   return `
@@ -230,8 +226,8 @@ function buildDeckRecommendationCard(deck, rank) {
 
   const deckCardsHTML = cards.map(c => `
     <div class="ai-card-chip">
-      <span class="ai-card-emoji">${getCardEmoji(c.name)}</span>
-      <span class="ai-card-name">${c.name}</span>
+      <span class="ai-card-emoji">${miniCardImgHTML(c, 'ai-mini')}</span>
+      <span class="ai-card-name">${getCardName(c.name)}</span>
       <span class="ai-card-elixir">💧${getElixirCost(c.name)}</span>
     </div>`).join('');
 
@@ -361,18 +357,21 @@ function renderCardsGrid(cards) {
     const rarity = (c.rarity || 'common').toLowerCase();
     const level  = c.level || 1;
     const maxLevel = rarity === 'legendary' ? 9 : rarity === 'epic' ? 10 : rarity === 'rare' ? 11 : 12;
-    const pct = Math.round((level / maxLevel) * 100);
-    // Cor do badge por raridade
     const badgeClass = rarity === 'legendary' ? 'badge-legendary'
                      : rarity === 'epic'      ? 'badge-epic'
                      : rarity === 'rare'      ? 'badge-rare' : 'badge-common';
+    const imgUrl = getCardImageUrl(c);
+    const nameDisplay = getCardName(c.name);
     return `
       <div class="card-item ${rarity}">
         <div class="card-emoji-wrap">
-          <div class="card-emoji">${getCardEmoji(c.name)}</div>
+          ${imgUrl
+            ? `<img src="${imgUrl}" alt="${nameDisplay}" class="card-real-img" loading="lazy" onerror="this.style.display='none'">`
+            : `<div class="card-emoji">${getCardEmoji(c.name)}</div>`
+          }
           <span class="card-lvl-badge ${badgeClass}">${level}</span>
         </div>
-        <div class="card-name">${c.name}</div>
+        <div class="card-name">${nameDisplay}</div>
         <div class="card-rarity-dot rarity-${rarity}"></div>
       </div>`;
   }).join('');
