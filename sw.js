@@ -3,7 +3,7 @@
  * Caches app shell for offline use
  */
 
-const CACHE = 'crstats-v4';
+const CACHE = 'crstats-v5';
 const SHELL = [
   './',
   './index.html',
