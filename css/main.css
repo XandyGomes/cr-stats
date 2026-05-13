@@ -58,6 +58,17 @@ body {
 .screen.active  { opacity: 1; transform: translateY(0); pointer-events: all; }
 .screen.hidden  { opacity: 0; transform: translateY(20px); pointer-events: none; }
 
+#app-screen {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+#splash-screen {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ── SPLASH / LOGIN ──────────────────────── */
 #splash-screen {
   display: flex; align-items: center; justify-content: center;
@@ -171,9 +182,9 @@ body {
 /* ── APP CONTENT ─────────────────────────── */
 .app-content {
   padding-top: calc(var(--top-h) + 12px);
-  padding-bottom: calc(var(--nav-h) + 16px);
+  padding-bottom: calc(var(--nav-h) + 24px);
   padding-left: 16px; padding-right: 16px;
-  min-height: 100dvh; overflow-y: auto;
+  min-height: 100dvh;
 }
 
 .page { display: none; animation: page-in .3s ease; }
