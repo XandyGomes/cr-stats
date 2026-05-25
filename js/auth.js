@@ -20,7 +20,7 @@ const Auth = {
   },
 
   /** Register a new user */
-  async register(username, password, apiKey, playerTag) {
+  async register(username, password, apiKey, playerTag, geminiKey = '') {
     const users = this.getUsers();
     const uname = username.trim().toLowerCase();
     if (users[uname]) throw new Error('Usuário já existe.');
@@ -28,11 +28,13 @@ const Auth = {
 
     const { hash, salt } = await CryptoUtil.hashPassword(password);
     const encryptedApiKey = await CryptoUtil.encryptData(apiKey.trim(), password);
+    const encryptedGeminiKey = geminiKey ? await CryptoUtil.encryptData(geminiKey.trim(), password) : null;
     const tag = playerTag.trim().toUpperCase().replace(/^#?/, '#');
 
     users[uname] = {
       hash, salt,
       encryptedApiKey,
+      encryptedGeminiKey,
       playerTag: tag,
       createdAt: Date.now()
     };
@@ -52,13 +54,41 @@ const Auth = {
 
     // Decrypt API key for this session only
     const apiKey = await CryptoUtil.decryptData(user.encryptedApiKey, password);
+    
+    // Decrypt Gemini key if exists
+    let geminiKey = null;
+    if (user.encryptedGeminiKey) {
+      geminiKey = await CryptoUtil.decryptData(user.encryptedGeminiKey, password);
+    }
 
     const session = {
       username: uname,
       playerTag: user.playerTag,
       apiKey,
+      geminiKey,
       loginAt: Date.now()
     };
+    sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
+    return session;
+  },
+
+  /** Update Gemini Key in active session and localStorage */
+  async updateGeminiKey(password, geminiKey) {
+    const session = this.getSession();
+    if (!session) throw new Error('Sessão expirada. Faça login novamente.');
+    
+    const users = this.getUsers();
+    const user = users[session.username];
+    if (!user) throw new Error('Usuário não encontrado.');
+
+    const ok = await CryptoUtil.verifyPassword(password, user.hash, user.salt);
+    if (!ok) throw new Error('Senha incorreta.');
+
+    const encryptedGeminiKey = await CryptoUtil.encryptData(geminiKey.trim(), password);
+    user.encryptedGeminiKey = encryptedGeminiKey;
+    this.saveUsers(users);
+
+    session.geminiKey = geminiKey.trim();
     sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
     return session;
   },
@@ -121,6 +151,7 @@ async function handleRegister(e) {
   const password = document.getElementById('reg-password').value;
   const apiKey   = document.getElementById('reg-api-key').value;
   const playerTag = document.getElementById('reg-player-tag').value;
+  const geminiKey = document.getElementById('reg-gemini-key')?.value || '';
   const btn = document.getElementById('register-btn');
   const errEl = document.getElementById('register-error');
 
@@ -128,7 +159,7 @@ async function handleRegister(e) {
   errEl.classList.add('hidden');
 
   try {
-    await Auth.register(username, password, apiKey, playerTag);
+    await Auth.register(username, password, apiKey, playerTag, geminiKey);
     const session = await Auth.login(username, password);
     showToast('✅ Conta criada com sucesso!');
     await initApp(session);

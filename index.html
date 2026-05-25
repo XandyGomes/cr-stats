@@ -106,6 +106,15 @@
           </div>
           <p class="form-hint">Obtenha em <a href="https://developer.clashroyale.com" target="_blank" rel="noopener">developer.clashroyale.com</a></p>
         </div>
+        <div class="form-group">
+          <label for="reg-gemini-key">Chave de API do Gemini (opcional)</label>
+          <div class="input-wrap">
+            <span class="input-icon">🤖</span>
+            <input type="password" id="reg-gemini-key" placeholder="AIzaSy... (para o Chat IA)" autocomplete="off" />
+            <button type="button" class="toggle-pass" onclick="togglePassword('reg-gemini-key',this)">👁️</button>
+          </div>
+          <p class="form-hint">Obtenha em <a href="https://aistudio.google.com" target="_blank" rel="noopener">aistudio.google.com</a></p>
+        </div>
         <button type="submit" class="btn-primary btn-full" id="register-btn">
           <span class="btn-text">Criar Conta</span>
           <span class="btn-loader hidden">⏳ Criando...</span>
@@ -242,6 +251,92 @@
       </div>
     </section>
 
+    <!-- ── CHAT IA ── -->
+    <section class="page hidden" id="page-chat">
+      <div class="page-header">
+        <h2>Treinador IA (Gemini)</h2>
+        <span class="last-update" id="chat-sub-title">Analisa seu perfil, cartas, batalhas e o meta da internet</span>
+      </div>
+
+      <!-- CONFIG DE CHAVE GEMINI (Se não configurado) -->
+      <div id="chat-config-view" class="chat-config-card hidden">
+        <div class="chat-config-header">
+          <span class="chat-config-badge">🔑 Requer Chave</span>
+          <h3>Configurar IA com Google Search</h3>
+        </div>
+        <p class="chat-config-text">
+          Para conversar com a IA e receber análises de decks personalizadas integradas com buscas em tempo real na internet, você precisa de uma chave da API do Gemini. 
+          A chave é gratuita e seus dados continuam 100% seguros no seu navegador.
+        </p>
+        <div class="chat-config-instructions">
+          <ol>
+            <li>Acesse o <strong><a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a></strong>.</li>
+            <li>Faça login com sua conta Google.</li>
+            <li>Clique em <strong>"Get API key"</strong> e crie uma nova chave.</li>
+            <li>Cole a chave gerada abaixo:</li>
+          </ol>
+        </div>
+        <form id="chat-config-form" onsubmit="handleSaveGeminiKey(event)">
+          <div class="form-group">
+            <label for="chat-gemini-key">Chave de API do Gemini</label>
+            <div class="input-wrap">
+              <span class="input-icon">🤖</span>
+              <input type="password" id="chat-gemini-key" placeholder="AIzaSy..." required />
+              <button type="button" class="toggle-pass" onclick="togglePassword('chat-gemini-key',this)">👁️</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="chat-config-password">Confirme sua senha do CR Stats</label>
+            <p class="form-hint" style="margin-bottom:4px;">Necessário para criptografar e salvar sua chave com segurança no dispositivo.</p>
+            <div class="input-wrap">
+              <span class="input-icon">🔒</span>
+              <input type="password" id="chat-config-password" placeholder="Sua senha de login" required />
+              <button type="button" class="toggle-pass" onclick="togglePassword('chat-config-password',this)">👁️</button>
+            </div>
+          </div>
+          <button type="submit" class="btn-primary btn-full" id="save-gemini-btn">
+            <span class="btn-text">Salvar Chave e Iniciar Chat</span>
+            <span class="btn-loader hidden">⏳ Salvando...</span>
+          </button>
+          <p class="form-error hidden" id="chat-config-error"></p>
+        </form>
+      </div>
+
+      <!-- CHAT INTERFACE (Se configurado) -->
+      <div id="chat-interface-view" class="chat-interface-card hidden">
+        <div class="chat-messages-container" id="chat-messages">
+          <!-- Mensagem inicial de boas-vindas -->
+          <div class="message system-msg">
+            <div class="msg-avatar">🤖</div>
+            <div class="msg-bubble">
+              <p>Olá, <strong><span id="chat-player-name-display">Jogador</span></strong>! Eu sou o seu Treinador de Clash Royale powered by Gemini. ⚔️</p>
+              <p>Já analisei seu perfil e estou conectado à internet para buscar o meta atualizado de Clash Royale em tempo real!</p>
+              <p>Como posso te ajudar a subir de arena hoje?</p>
+            </div>
+          </div>
+
+          <!-- Grade de sugestões rápidas -->
+          <div class="quick-suggestions" id="chat-quick-suggestions">
+            <button class="quick-btn" onclick="sendQuickMessage('Qual o melhor deck competitivo com minhas cartas de nível mais alto?')">🃏 Melhor deck com minhas cartas mais fortes</button>
+            <button class="quick-btn" onclick="sendQuickMessage('Quais são os melhores decks do meta atual no Clash Royale e quais eu consigo montar?')">🌐 Melhores decks do meta atual na internet</button>
+            <button class="quick-btn" onclick="sendQuickMessage('Analise minhas últimas derrotas e me diga onde estou errando e como melhorar.')">🔍 Analisar minhas derrotas recentes</button>
+            <button class="quick-btn" onclick="sendQuickMessage('Como counterar decks populares de Gigante Eletro ou Corredor com cartas recomendadas?')">🛡️ Como defender contra Gigante Eletro / Corredor</button>
+          </div>
+        </div>
+
+        <div class="chat-input-area">
+          <textarea id="chat-input" placeholder="Pergunte sobre decks, sinergia, táticas ou o meta..." rows="1" onkeydown="handleChatInputKey(event)"></textarea>
+          <button id="chat-send-btn" onclick="sendUserMessage()">Enviar</button>
+        </div>
+
+        <div class="chat-settings-bar">
+          <span class="chat-api-status">API Gemini + Google Search Grounding ✅</span>
+          <button class="chat-clear-btn" onclick="clearChatHistory()">Limpar Conversa 🧹</button>
+          <button class="chat-change-key-btn" onclick="showGeminiConfig(true)">Alterar Chave 🔑</button>
+        </div>
+      </div>
+    </section>
+
     <!-- ── ANALYTICS ── -->
     <section class="page hidden" id="page-analytics">
       <div class="page-header"><h2>Analytics</h2></div>
@@ -276,6 +371,9 @@
     <button class="nav-item" id="nav-decks" onclick="navigateTo('decks')">
       <span class="nav-icon">🃏</span><span class="nav-label">Decks</span>
     </button>
+    <button class="nav-item" id="nav-chat" onclick="navigateTo('chat')">
+      <span class="nav-icon">🤖</span><span class="nav-label">Chat IA</span>
+    </button>
     <button class="nav-item" id="nav-cards" onclick="navigateTo('cards')">
       <span class="nav-icon">💎</span><span class="nav-label">Cartas</span>
     </button>
@@ -295,6 +393,7 @@
 <script src="js/api.js"></script>
 <script src="js/analytics.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/chat.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

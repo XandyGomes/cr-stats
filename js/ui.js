@@ -24,6 +24,19 @@ function navigateTo(page) {
   if (pageEl) { pageEl.classList.remove('hidden'); pageEl.classList.add('active'); }
   if (navEl)  navEl.classList.add('active');
 
+  // Ajusta scroll e paddings do app-content para o Chat IA
+  const appContent = document.querySelector('.app-content');
+  if (appContent) {
+    if (page === 'chat') {
+      appContent.style.overflowY = 'hidden';
+      appContent.style.padding = '12px 16px 12px';
+      if (typeof initChatPage === 'function') initChatPage();
+    } else {
+      appContent.style.overflowY = 'scroll';
+      appContent.style.padding = '12px 16px 24px';
+    }
+  }
+
   if (page === 'analytics') renderCharts();
 }
 
